@@ -23,7 +23,8 @@ func (e storeErr) Error() string {
 }
 
 const (
-	ErrNotFound = storeErr("not found")
+	ErrNotFound     = storeErr("not found")
+	ErrInvalidEntry = storeErr("invalid URL entry")
 )
 
 type Store struct {
@@ -109,5 +110,9 @@ func (s *Store) Lookup(_ context.Context, short string) (string, error) {
 		fmt.Printf("failed to read %s: %v\n", shortcodeFilepath, err)
 		return "", err
 	}
-	return string(data), nil
+	longURL := strings.TrimSpace(string(data))
+	if longURL == "" {
+		return "", ErrInvalidEntry
+	}
+	return longURL, nil
 }
