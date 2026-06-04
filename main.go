@@ -2,8 +2,10 @@ package main
 
 import (
 	"context"
+	"errors"
 	"flag"
 	"fmt"
+	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
@@ -36,7 +38,11 @@ func run(ctx context.Context, cancel context.CancelFunc, httpPort int, dataDir s
 		serverErr = s.start()
 	}()
 
+	time.Sleep(100 * time.Millisecond)
+	fmt.Printf("✓ Server started! Open http://localhost:%d in your browser\n", httpPort)
+
 	<-ctx.Done()
+	fmt.Println("\nShutting down server...")
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
@@ -44,9 +50,10 @@ func run(ctx context.Context, cancel context.CancelFunc, httpPort int, dataDir s
 		fmt.Fprintf(os.Stderr, "failed to shutdown server: %v\n", err)
 		return 1
 	}
-	if serverErr != nil {
+	if serverErr != nil && !errors.Is(serverErr, http.ErrServerClosed) {
 		fmt.Fprintf(os.Stderr, "server error: %v\n", serverErr)
 		return 1
 	}
+	fmt.Println("Server stopped cleanly")
 	return 0
 }
